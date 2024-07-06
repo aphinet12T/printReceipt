@@ -1,19 +1,26 @@
 <template>
     <div class="flex flex-col md:h-full space-y-4 p-4">
-        <div class="flex items-center space-x-4">
-            <!-- <ButtonBack /> -->
+        <div v-if="loading" class="flex justify-center items-center fixed inset-0 bg-white">
+            <svg class="animate-spin h-8 w-8 text-gray-700" xmlns="http://www.w3.org/2000/svg" fill="none"
+                viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8h8a8 8 0 01-8 8 8 8 0 01-8-8z">
+                </path>
+            </svg>
+        </div>
+        <div v-else class="flex items-center space-x-4">
             <span class="ml-2 text-xl font-bold">รายละเอียด</span>
         </div>
-        <div class="bg-white p-3 shadow-md rounded-md">
+        <div v-if="!loading" class="bg-white p-3 shadow-md rounded-md">
             <div class="text-sm">
-                <!-- <div>{{ customer.customername }} </div> -->
                 <div>ร้าน : {{ customer.customername }}</div>
                 <div>เบอร์ : {{ customer.phone }}</div>
                 <div>เลขที่ผู้เสียภาษี : {{ customer.taxno }} </div>
-                <div>{{ customer.address1 }} {{ customer.address2 }} {{ customer.address3 }} {{ customer.postcode }}</div>
+                <div>{{ customer.address1 }} {{ customer.address2 }} {{ customer.address3 }} {{ customer.postcode }}
+                </div>
             </div>
         </div>
-        <div class="flex flex-col items-center">
+        <div v-if="!loading" class="flex flex-col items-center">
             <div class="bg-white px-4 py-2 shadow-md rounded-lg overflow-auto h-[500px] w-full max-w-2xl">
                 <div class="flex flex-col space-y-2">
                     <div v-for="list in item" :key="list.OBITNO" class="border-b pb-2">
@@ -34,7 +41,7 @@
                 </div>
             </div>
         </div>
-        <div class="flex-grow">
+        <div v-if="!loading" class="flex-grow">
             <div class="bg-white p-4 rounded-md shadow-md space-y">
                 <div class="flex justify-between text-lg">
                     <span>มูลค่าสินค้า</span>
@@ -58,17 +65,16 @@
                 </div>
             </div>
         </div>
-        <div class="flex gap-4 text-white text-xl">
-            <button 
-                class="p-4 w-full bg-blue-500 rounded-lg flex items-center justify-center shadow-lg" @click="showAlert = true">
+        <div v-if="!loading" class="flex gap-4 text-white text-xl">
+            <button class="p-4 w-full bg-blue-500 rounded-lg flex items-center justify-center shadow-lg"
+                @click="showAlert = true">
                 พิมพ์ใบเสร็จ
             </button>
         </div>
+        <AlertBluetooth v-if="showAlert" :title="'เชื่อมต่อบลูทูธ'" @print="handlePrint" @dismiss="showAlert = false"
+            :color="'text-gray-600 border border-green-300 bg-green-100'" />
     </div>
-    <AlertBluetooth v-if="showAlert" :title="'เชื่อมต่อบลูทูธ'" @print="handlePrint" @dismiss="showAlert = false"
-    :color="'text-gray-600 border border-green-300 bg-green-100'" />
 </template>
-
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
@@ -84,6 +90,7 @@ const detail = computed(() => order.orderDetail)
 const item = computed(() => order.orderItem)
 const customer = computed(() => order.orderCustomer)
 const showAlert = ref(false)
+const loading = ref(true)
 
 const handlePrint = async () => {
     const formattedData = receipt.formatReceiptData(detail.value);
@@ -92,8 +99,9 @@ const handlePrint = async () => {
     showAlert.value = false;
 };
 
-onMounted(() => {
+onMounted(async () => {
     const orderNo = localStorage.getItem('orderNo')
-    order.getOrderDetail(orderNo)
+    await order.getOrderDetail(orderNo)
+    loading.value = false
 });
 </script>
